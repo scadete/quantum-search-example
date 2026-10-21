@@ -18,6 +18,6 @@
 
 qiskit[all]~=2.5.2
 qiskit-aer~=0.17.0
-qiskit-ibm-runtime~=0.47.0
+qiskit-ibm-runtime~=0.50.0
 notebook~=7.0
 matplotlib~=3.9

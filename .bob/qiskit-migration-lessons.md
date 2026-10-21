@@ -92,6 +92,16 @@ Confirmed useful URLs (prefix `https://quantum.cloud.ibm.com/docs/en/`):
 
 ---
 
+## executor_sampler.Sampler version gate
+
+`qiskit_ibm_runtime.executor_sampler.Sampler` was introduced in **0.50.0**.
+On 0.47.x (pinned here) it does not exist — `ImportError` on any attempt.
+
+For 0.47.x use `from qiskit_ibm_runtime import SamplerV2 as Sampler`.
+Upgrade to `qiskit-ibm-runtime~=0.50` to use `executor_sampler.Sampler`.
+
+---
+
 ## Dependency audit (Qiskit 2.5.x)
 
 | Remove | Reason |
