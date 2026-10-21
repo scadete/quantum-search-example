@@ -8,8 +8,6 @@
 #                          generate_preset_pass_manager, plot_histogram, …
 #                          (includes qiskit-aer via the [all] extra)
 # qiskit-aer             → AerSimulator  (also pulled in by qiskit[all])
-# qiskit-algorithms      → Grover, AmplificationProblem
-#                          (community continuation of removed qiskit.algorithms)
 # qiskit-ibm-runtime     → QiskitRuntimeService, Session, SamplerV2
 #                          executor_sampler.Sampler (client-side Executor hop B)
 #                          FakeKingston (fake_provider, for local hardware testing)
@@ -20,7 +18,6 @@
 
 qiskit[all]~=2.5.2
 qiskit-aer~=0.17.0
-qiskit-algorithms~=0.3.1
 qiskit-ibm-runtime~=0.47.0
 notebook~=7.0
 matplotlib~=3.9
