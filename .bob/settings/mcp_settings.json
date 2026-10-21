@@ -1,0 +1,41 @@
+{
+    "mcpServers": {
+        "qiskit": {
+            "command": "uvx",
+            "args": ["qiskit-mcp-server"],
+            "alwaysAllow": [],
+            "disabled": false
+        },
+        "qiskit-docs": {
+            "command": "uvx",
+            "args": ["qiskit-docs-mcp-server"],
+            "alwaysAllow": [],
+            "disabled": false
+        },
+        "qiskit-gym": {
+            "command": "uvx",
+            "args": ["qiskit-gym-mcp-server"],
+            "alwaysAllow": [],
+            "disabled": false
+        },
+        "qiskit-ibm-runtime": {
+            "command": "uvx",
+            "args": ["qiskit-ibm-runtime-mcp-server"],
+            "env": {
+                "QISKIT_IBM_TOKEN": "<your IBM Quantum token>",
+                "QISKIT_IBM_RUNTIME_MCP_INSTANCE": "<Optional: Your IBM Quantum instance CRN>"
+            },
+            "alwaysAllow": [],
+            "disabled": true
+        },
+        "qiskit-ibm-transpiler": {
+            "command": "uvx",
+            "args": ["qiskit-ibm-transpiler-mcp-server"],
+            "env": {
+                "QISKIT_IBM_TOKEN": "<your IBM Quantum token>"
+            },
+            "alwaysAllow": [],
+            "disabled": true
+        }
+    }
+}
