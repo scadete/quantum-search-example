@@ -34,15 +34,22 @@ is_good_state=lambda bits: BooleanExpression(expression).simulate(bits)
 ```
 `BooleanExpression.simulate(bitstring)` returns `True`/`False` — same semantics.
 
-### BooleanExpression import only needed where simulate() is called
-`qiskit.circuit.classicalfunction` is an optional module — importing it when
-`BooleanExpression` is not actually called raises `ModuleNotFoundError` on
-installs without it. Only import in cells that call `.simulate()`.
-Display-only cells (oracle visualization) do not need this import at all.
+### BooleanExpression / classicalfunction — avoid entirely
+`qiskit.circuit.classicalfunction` is an **optional C-extension** that is
+frequently absent even when `qiskit[all]` is installed. Any import of it
+raises `ModuleNotFoundError` in those environments.
+
+**Do not use `BooleanExpression.simulate()` for oracle evaluation.**
+The project already has `cultivar_matches(cultivar, query)` (Sub-Tarefa 5)
+as the canonical classical oracle. Use it instead:
+```python
+oracle_eval = any(cultivar_matches(c, query) for c in CULTIVARES)
+```
+This is semantically equivalent and has zero extra dependencies.
 
 ### tweedledum is no longer needed
 `PhaseOracle` required `tweedledum` for boolean synthesis.
-`PhaseOracleGate` uses `qiskit.circuit.classicalfunction` (built-in).
+`PhaseOracleGate` uses Qiskit's own internal synthesis — no external package needed.
 Remove `tweedledum` from requirements and install cells entirely.
 
 ---
