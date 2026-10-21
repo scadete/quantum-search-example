@@ -1,177 +1,102 @@
-# Qiskit Migration — Lessons Learned
-# quantum-search-example project
-# Last updated: 2026-10-21
+# Qiskit 2.x Migration — Lessons Learned
+<!-- Agent memory. Concise, reusable across projects. Load before any Qiskit migration. -->
 
-This file records concrete discoveries made while migrating this notebook from
-deprecated Qiskit APIs to clean Qiskit 2.5.x. Load it before any future
-migration or upgrade work on this project to skip the discovery phase.
+## PhaseOracle → PhaseOracleGate (deprecated 2.2, removed 3.0)
 
----
-
-## 1. PhaseOracle → PhaseOracleGate
-
-### What changed
-`PhaseOracle` (deprecated since 2.2, removed in 3.0) was a `QuantumCircuit` subclass.
-`PhaseOracleGate` (replacement) is a `Gate` — it cannot be passed directly to
-`AmplificationProblem` or used as a standalone oracle circuit.
-
-### Wrapping pattern required
+`PhaseOracleGate` is a `Gate`, not a `QuantumCircuit`. Must wrap before use:
 ```python
 from qiskit.circuit.library import PhaseOracleGate
-from qiskit import QuantumCircuit
-
 gate = PhaseOracleGate(expression)
 oracle = QuantumCircuit(gate.num_qubits)
 oracle.append(gate, range(gate.num_qubits))
 ```
+`evaluate_bitstring` is gone. Evaluate the expression with project-side logic or
+`BooleanExpression.simulate()` — but see warning below.
 
-### evaluate_bitstring is gone
-`PhaseOracle.evaluate_bitstring` does not exist on `PhaseOracleGate`.
-Replace `is_good_state=oracle.evaluate_bitstring` with:
-```python
-from qiskit.circuit.classicalfunction import BooleanExpression
-is_good_state=lambda bits: BooleanExpression(expression).simulate(bits)
-```
-`BooleanExpression.simulate(bitstring)` returns `True`/`False` — same semantics.
+**`qiskit.circuit.classicalfunction` is an optional C-extension — often missing even
+with `qiskit[all]`.** Any import raises `ModuleNotFoundError`. Do not use it.
+Prefer a pure-Python oracle checker the project already owns, or implement one.
 
-### BooleanExpression / classicalfunction — avoid entirely
-`qiskit.circuit.classicalfunction` is an **optional C-extension** that is
-frequently absent even when `qiskit[all]` is installed. Any import of it
-raises `ModuleNotFoundError` in those environments.
-
-**Do not use `BooleanExpression.simulate()` for oracle evaluation.**
-The project already has `cultivar_matches(cultivar, query)` (Sub-Tarefa 5)
-as the canonical classical oracle. Use it instead:
-```python
-oracle_eval = any(cultivar_matches(c, query) for c in CULTIVARES)
-```
-This is semantically equivalent and has zero extra dependencies.
-
-### tweedledum is no longer needed
-`PhaseOracle` required `tweedledum` for boolean synthesis.
-`PhaseOracleGate` uses Qiskit's own internal synthesis — no external package needed.
-Remove `tweedledum` from requirements and install cells entirely.
+`tweedledum` no longer needed — `PhaseOracleGate` uses built-in synthesis. Remove from deps.
 
 ---
 
-## 2. qiskit-algorithms (Grover + AmplificationProblem) → native grover_operator
+## qiskit-algorithms → native grover_operator
 
-### What changed
-`qiskit_algorithms.Grover` and `AmplificationProblem` are a community package
-wrapping removed `qiskit.algorithms.*`. Qiskit 2.x ships the full primitive
-natively in `qiskit.circuit.library`.
-
-### Replacement
+`qiskit_algorithms.Grover` + `AmplificationProblem` = community package over removed
+`qiskit.algorithms`. Replace with native `qiskit.circuit.library.grover_operator` (function):
 ```python
-from qiskit.circuit.library import grover_operator   # function, not class
-from qiskit import QuantumCircuit
+from qiskit.circuit.library import grover_operator
 from qiskit.primitives import StatevectorSampler
 
-# Build oracle (QuantumCircuit) first, then:
-grover_op = grover_operator(oracle)
-
-n = oracle.num_qubits
-circuit = QuantumCircuit(n)
-circuit.h(range(n))                        # uniform superposition (state prep)
-circuit.compose(grover_op, inplace=True)   # one Grover iteration
+grover_op = grover_operator(oracle)          # oracle = QuantumCircuit
+circuit = QuantumCircuit(oracle.num_qubits)
+circuit.h(range(oracle.num_qubits))          # state prep
+circuit.compose(grover_op, inplace=True)     # 1 iteration; loop for more
 circuit.measure_all()
 
-job = StatevectorSampler().run([circuit], shots=1024)
-counts = job.result()[0].data.meas.get_counts()
-top_measurement = max(counts, key=counts.get)
+counts = StatevectorSampler().run([circuit], shots=1024).result()[0].data.meas.get_counts()
+top = max(counts, key=counts.get)
 ```
+For k iterations: `for _ in range(k): circuit.compose(grover_op, inplace=True)`.
+Large k on many qubits is slow with `StatevectorSampler`; use 1 for debugging.
 
-For multiple iterations (e.g. the cultivar search used 1024), loop:
-```python
-for _ in range(num_iterations):
-    circuit.compose(grover_op, inplace=True)
-```
-Note: large iteration counts on 21-qubit circuits are very slow with
-`StatevectorSampler`. Start with 1 iteration for debugging.
+`GroverResult` fields gone: `top_measurement`, `oracle_evaluation`, `circuit_results[0]`.
+Manual equivalents: `max(counts, key=counts.get)`, project oracle fn, `counts` directly.
 
-### Result fields that no longer exist
-`GroverResult.top_measurement`, `.oracle_evaluation`, `.circuit_results[0]`
-are gone with `qiskit-algorithms`. Manual equivalents:
-```python
-top_measurement  = max(counts, key=counts.get)
-oracle_evaluation = BooleanExpression(expression).simulate(top_measurement)
-histogram_data    = counts  # pass directly to plot_histogram()
-```
+`grover_operator(oracle).decompose().draw('mpl')` replaces
+`problem.grover_operator.oracle.decompose().draw('mpl')`.
 
 ---
 
-## 3. grover_operator() vs GroverOperator class
+## SamplerV2 result access chain
 
-Both exist in `qiskit.circuit.library`. The **function** `grover_operator()` is
-the recommended API for Qiskit 2.x. The **class** `GroverOperator` also works
-and exposes attributes like `.oracle` and `.state_preparation`. For drawing the
-oracle only:
 ```python
-grover_operator(oracle).decompose().draw(output='mpl')
-# Replaces: problem.grover_operator.oracle.decompose().draw(output='mpl')
+counts = job.result()[0].data.<creg_name>.get_counts()
+# measure_all() → creg name is 'meas' → .data.meas
 ```
+DataBin attribute = classical register name. Custom creg → use that name.
 
 ---
 
-## 4. SamplerV2 / StatevectorSampler result shape
+## plot_state_qsphere
 
-`StatevectorSampler.run([circuit], shots=N)` returns a `PrimitiveJob`.
-Result access chain:
+Requires `Statevector`, not bare `QuantumCircuit`:
 ```python
-result  = job.result()          # PrimitiveResult
-pub_result = result[0]          # SamplerPubResult
-bit_array  = pub_result.data.meas   # DataBin attribute name = creg name
-counts     = bit_array.get_counts() # dict[str, int]
-```
-The `DataBin` attribute name matches the classical register name.
-`measure_all()` creates a register named `meas` → `pub_result.data.meas`.
-If a custom register name is used, access it by that name instead.
-
----
-
-## 5. plot_state_qsphere requires Statevector, not QuantumCircuit
-
-Passing a `QuantumCircuit` directly to `plot_state_qsphere` triggers implicit
-conversion which may silently break or warn. Pass explicitly:
-```python
-from qiskit.quantum_info import Statevector
 plot_state_qsphere(Statevector(circuit))
 ```
 
 ---
 
-## 6. generate_preset_pass_manager import path
+## generate_preset_pass_manager import
 
-Canonical import in Qiskit 2.x (avoids submodule import warning):
 ```python
-from qiskit.transpiler import generate_preset_pass_manager   # correct
+from qiskit.transpiler import generate_preset_pass_manager        # correct
 # NOT: from qiskit.transpiler.preset_passmanagers import ...
 ```
 
 ---
 
-## 7. qiskit-docs MCP tool — confirmed useful lookups
+## qiskit-docs MCP — efficient lookup pattern
 
-- `PhaseOracleGate` full API: `api/qiskit/qiskit.circuit.library.PhaseOracleGate`
-- `grover_operator` function: `api/qiskit/qiskit.circuit.library.grover_operator`
-- `GroverOperator` class: `api/qiskit/qiskit.circuit.library.GroverOperator`
-- `StatevectorSampler`: `api/qiskit/qiskit.primitives.StatevectorSampler`
-- `HAS_TWEEDLEDUM` status: `api/qiskit/utils#qiskitutilsoptionalshas_tweedledum`
-- Qiskit 2.0 migration guide: `guides/qiskit-2.0`
+1. `search_docs_tool(query, scope="api")` — scope cuts noise for API lookups.
+2. `get_page_tool(url)` on the returned URL for full content.
 
-Use `search_docs_tool` first, then `get_page_tool` on the returned URL for
-full content. Scope `"api"` cuts noise significantly for API lookups.
+Confirmed useful URLs (prefix `https://quantum.cloud.ibm.com/docs/en/`):
+- `api/qiskit/qiskit.circuit.library.PhaseOracleGate`
+- `api/qiskit/qiskit.circuit.library.grover_operator`
+- `api/qiskit/qiskit.circuit.library.GroverOperator`
+- `api/qiskit/qiskit.primitives.StatevectorSampler`
+- `api/qiskit/utils#qiskitutilsoptionalshas_tweedledum`
+- `guides/qiskit-2.0`
 
 ---
 
-## 8. Dependency reduction achieved
+## Dependency audit (Qiskit 2.5.x)
 
-| Removed | Reason |
+| Remove | Reason |
 |---|---|
-| `tweedledum~=1.1.1` | `PhaseOracleGate` uses built-in synthesis |
-| `qiskit-algorithms~=0.3.1` | Replaced by native `grover_operator` |
+| `tweedledum` | `PhaseOracleGate` uses built-in synthesis |
+| `qiskit-algorithms` | Replaced by `grover_operator` in `qiskit.circuit.library` |
 
-Final install cell (as of 2026-10-21):
-```
-qiskit[all]~=2.5.2  qiskit-aer~=0.17.0  qiskit-ibm-runtime~=0.47.0  matplotlib~=3.9
-```
+Minimal viable install: `qiskit[all]`, `qiskit-aer`, `qiskit-ibm-runtime`, `matplotlib`.
