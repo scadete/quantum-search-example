@@ -34,6 +34,12 @@ is_good_state=lambda bits: BooleanExpression(expression).simulate(bits)
 ```
 `BooleanExpression.simulate(bitstring)` returns `True`/`False` — same semantics.
 
+### BooleanExpression import only needed where simulate() is called
+`qiskit.circuit.classicalfunction` is an optional module — importing it when
+`BooleanExpression` is not actually called raises `ModuleNotFoundError` on
+installs without it. Only import in cells that call `.simulate()`.
+Display-only cells (oracle visualization) do not need this import at all.
+
 ### tweedledum is no longer needed
 `PhaseOracle` required `tweedledum` for boolean synthesis.
 `PhaseOracleGate` uses `qiskit.circuit.classicalfunction` (built-in).
