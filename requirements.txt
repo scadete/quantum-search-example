@@ -13,14 +13,14 @@
 # qiskit-ibm-runtime     → QiskitRuntimeService, Session, SamplerV2
 #                          executor_sampler.Sampler (client-side Executor hop B)
 #                          FakeKingston (fake_provider, for local hardware testing)
-# tweedledum             → boolean-expression compiler used by PhaseOracle/PhaseOracleGate
-#                          (cells already guard with try/except MissingOptionalLibraryError)
 # jupyter/matplotlib     → notebook runtime + visualisation
+#
+# Note: tweedledum is no longer required — PhaseOracleGate (Qiskit 2.2+) uses
+#       qiskit.circuit.classicalfunction.BooleanExpression internally.
 
 qiskit[all]~=2.5.2
 qiskit-aer~=0.17.0
 qiskit-algorithms~=0.3.1
 qiskit-ibm-runtime~=0.47.0
-tweedledum~=1.1.1
 notebook~=7.0
 matplotlib~=3.9
