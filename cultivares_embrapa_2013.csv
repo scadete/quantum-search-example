@@ -1,0 +1,17 @@
+nome,tipo,regioes,meses_semeadura,res_cancro_haste,res_mancha_olho_ra,res_oidio,res_podridao_parda_haste,res_podridao_fitoftora,res_mosaico_comum,res_virus_necrose_haste,res_nema_incognita,res_nema_javanica,res_nema_cisto
+BRS 184,Convencional,201|202|203|204|302,OUT|NOV|DEZ,True,True,False,False,False,True,False,False,False,False
+BRS 232,Convencional,102|103|201|202|203|204|302,OUT|NOV|DEZ,True,True,False,True,False,True,False,False,False,False
+BRS 257,Convencional,102|103|201|202|203,OUT|NOV|DEZ,True,True,False,False,True,True,False,False,False,False
+BRS 262,Convencional,301|302|303,OUT|NOV,True,True,False,False,True,False,False,False,False,True
+BRS 282,Convencional,201|202|203|204|302,OUT|NOV|DEZ,True,True,False,True,False,False,False,True,True,False
+BRS 283,Convencional,103|201|202|203|204|301|302|303,OUT|NOV|DEZ,True,True,False,False,False,False,False,False,False,False
+BRS 284,Convencional,103|201|202|203|204|301|302|303,OUT|NOV|DEZ,True,True,False,True,False,False,False,False,False,False
+BRS 317,Convencional,201|202|203|204|302,OUT|NOV|DEZ,True,True,False,False,False,True,False,True,False,False
+BRS 361,Convencional,301|302|303,OUT|NOV,True,True,False,False,True,True,False,False,False,False
+BRS 245 RR,RR,301|302|303,OUT|NOV,True,True,False,False,False,True,False,False,False,False
+BRS 295 RR,RR,201|202|203|204|302,OUT|NOV|DEZ,True,True,False,False,True,False,False,False,False,True
+BRS 316 RR,RR,201|202|203|204|302,OUT|NOV|DEZ,True,True,False,True,True,True,False,False,True,False
+BRS 334 RR,RR,301|302|303,OUT|NOV,True,True,False,False,False,True,False,False,False,False
+BRS 359 RR,RR,201|202|203|204,SET|OUT|NOV,True,False,False,True,True,True,False,False,False,False
+BRS 360 RR,RR,201|202|203|204,SET|OUT|NOV,True,False,False,True,True,True,False,False,False,False
+BRS 378 RR,RR,102|103,OUT|NOV|DEZ,True,False,False,False,False,True,False,False,False,False
